@@ -1,0 +1,47 @@
+services:
+  # The Laravel Backend
+  backend:
+    build: 
+      context: ./backend
+    ports:
+      - "8000:80" # Apache runs on 80 inside the container
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=efiche_billing
+      - DB_USERNAME=admin
+      - DB_PASSWORD=password
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # The PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=efiche_billing
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d efiche_billing"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # The Next.js Frontend
+  frontend:
+    image: node:20-alpine
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    working_dir: /app
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - backend

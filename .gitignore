@@ -1,0 +1,36 @@
+# Dependencies
+billing-app/frontend/node_modules/
+billing-app/backend/vendor/
+
+# Environment files
+**/ .env
+**/ .env.local
+
+# Next.js build output
+**/ .next/
+**/ out/
+
+# Laravel specific
+**/storage/*.key
+**/storage/framework/cache/data/*
+**/storage/framework/sessions/*
+**/storage/framework/testing/*
+**/storage/framework/views/*
+**/storage/logs/*.log
+**/public/storage
+
+# Database
+**/database/*.sqlite
+
+# Docker
+.docker-compose.persistent
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
