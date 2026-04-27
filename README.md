@@ -6,7 +6,7 @@ Key focus areas: **High Availability**, **Data Consistency**, and **Offline-firs
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Backend**: Laravel 10+ (PHP 8.2)
 - **Frontend**: Next.js 14 (App Router)
@@ -15,7 +15,7 @@ Key focus areas: **High Availability**, **Data Consistency**, and **Offline-firs
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Option 1: Docker (Recommended)
 We use Laravel Sail for a pre-configured environment.
@@ -41,7 +41,7 @@ If you prefer running without Docker:
 
 ---
 
-## 🧪 Integration Testing (Webhooks)
+##  Integration Testing (Webhooks)
 
 The system includes an idempotent webhook handler to prevent duplicate payment processing:
 
