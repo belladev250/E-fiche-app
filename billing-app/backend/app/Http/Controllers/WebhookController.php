@@ -11,10 +11,6 @@ use Illuminate\Database\QueryException;
 
 class WebhookController extends Controller
 {
-    /**
-     * POST /api/webhooks/efichepay
-     * Receives mobile money confirmation events.
-     */
     public function handleEfichePayWebhook(Request $request)
     {
         $payload = $request->all();
@@ -25,14 +21,14 @@ class WebhookController extends Controller
         }
 
         try {
-            // ATOMIC Step 1: Record the event to guarantee idempotency via DB Unique Index
+            // Track event to ensure idempotency
             $eventRecord = WebhookEvent::create([
                 'event_id' => $eventId,
                 'payload'  => $payload,
                 'status'   => 'received'
             ]);
         } catch (QueryException $e) {
-            // Already processed this specific event payload (Postgres error code 23505 is unique violation)
+            // Duplicate event, return success to acknowledge receipt
             if ($e->getCode() === '23505') {
                 return response()->json(['status' => 'already_processed'], 200);
             }
@@ -45,14 +41,14 @@ class WebhookController extends Controller
                 return response()->json(['status' => 'ok']);
             }
 
-            // Find invoice by internal ref
+            // Lock invoice to prevent race conditions during concurrent payments
             $invoice = Invoice::where('transaction_ref', $payload['orderNumber'])
                 ->lockForUpdate()
                 ->first();
 
             if ($invoice) {
-                // Convert cent-based amount if needed (e.g. payload in Cents/RWF)
-                $amount = $payload['amount'] / 1; 
+                // We assume amount from Momo provider is in the base currency (RWF)
+                $amount = $payload['amount']; 
 
                 $payment = $invoice->payments()->create([
                     'amount'     => $amount,
@@ -61,7 +57,7 @@ class WebhookController extends Controller
                     'transaction_id' => $payload['transactionId'] ?? null
                 ]);
 
-                // Check if invoice is now fully paid
+                // Update invoice status if fully paid
                 $totalPaid = $invoice->payments()->where('status', 'confirmed')->sum('amount');
                 if ($totalPaid >= $invoice->total_amount) {
                     $invoice->update(['status' => 'paid']);

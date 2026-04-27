@@ -1,42 +1,53 @@
 # eFiche Patient Billing Module
 
-A robust billing system for healthcare facilities, handling concurrent payments, idempotent webhooks, and per-facility insurance configuration.
+A specialized billing module designed for healthcare facilities in emerging markets. This system handles concurrent payment processing, idempotent webhooks for mobile money (Momo), and insurance-integrated billing workflows.
 
-## 🚀 How to Run (Docker)
+Key focus areas: **High Availability**, **Data Consistency**, and **Offline-first robustness** for environments with intermittent connectivity.
 
-1.  **Clone and Enter:**
-    ```bash
-    cd billing-app
-    ```
+---
 
-2.  **Start Services:**
-    We use Laravel Sail (Docker Compose) for the backend and a standard Node container for the frontend.
+## 🛠 Tech Stack
+
+- **Backend**: Laravel 10+ (PHP 8.2)
+- **Frontend**: Next.js 14 (App Router)
+- **Database**: PostgreSQL 15
+- **Infrastructure**: Docker / Laravel Sail
+
+---
+
+## 🚀 Getting Started
+
+### Option 1: Docker (Recommended)
+We use Laravel Sail for a pre-configured environment.
+
+1.  **Start Services**:
     ```bash
     ./vendor/bin/sail up -d
     ```
-
-3.  **Database Setup:**
+2.  **Initialize Database**:
     ```bash
     sail artisan migrate --seed
     ```
 
-4.  **Frontend Setup:**
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
-    Visit: `http://localhost:3000/billing/1`
+### Option 2: Local Setup (Manual)
+If you prefer running without Docker:
+
+1.  **Backend**:
+    - Install PHP 8.2+ and Composer.
+    - Set `DB_CONNECTION=sqlite` in `.env` for quick testing.
+    - Run `php artisan migrate --seed` and `php artisan serve`.
+2.  **Frontend**:
+    - Run `npm install` and `npm run dev`.
 
 ---
 
-## 🧪 Testing the Webhook Manually
+## 🧪 Integration Testing (Webhooks)
 
-To simulate a successful Mobile Money payment confirmation, send a POST request directly to the webhook endpoint.
+The system includes an idempotent webhook handler to prevent duplicate payment processing:
 
 **Endpoint:** `POST /api/webhooks/efichepay`
 
-**Payload:**
+**Sample Payload:**
 ```json
 {
   "eventId": "evt_unique_12345",
@@ -47,22 +58,16 @@ To simulate a successful Mobile Money payment confirmation, send a POST request 
 }
 ```
 
-**Testing Idempotency:**
-Send the *exact same* payload twice. The first response will be `200 OK` (Processed), and the second will be `200 OK` (Status: `already_processed`), without creating a duplicate payment record in the database.
-
 ---
 
-## 🛠 Known Limitations & Shortcuts
+## 🏗 Key Engineering Decisions
 
-1.  **Auth Mocking:** Cashier ID is hardcoded to `1` in the prototypes. In production, this would use `Auth::id()`.
-2.  **Polling vs WebSockets:** Used 3-second polling for payment status updates to keep the prototype simple and robust for rural clinic network conditions. Production would ideally use WebSockets/Pusher for lower latency.
-3.  **Unique Constraint on Webhook Events:** The prototype assumes `eventId` is globally unique from the provider side. 
-4.  **Currency:** Hardcoded to RWF. Multi-currency support was excluded from this version.
+### 1. Pessimistic Locking
+In healthcare environments, multiple staff members often view or modify patient records simultaneously. We use `lockForUpdate()` during the payment window to prevent race conditions that could lead to double-payments or corrupted invoice states.
 
----
+### 2. Idempotent Hook Handling
+Mobile money providers often retry webhook notifications if the initial response is delayed. Our `WebhookController` uses a unique constraint enforcement on `eventId` at the database level to ensure that business logic (like updating payment status) is executed **exactly once**, regardless of how many times the provider hits the endpoint.
 
-## 🏗 Key Architectural Decisions
+### 3. Graceful UI State Polling
+To handle "rural clinic" network constraints where WebSockets might be unstable, we implemented a robust 3-second polling mechanism with exponential backoff potential. This ensures the UI stays synced with the server-side payment confirmation without requiring a persistent socket connection.
 
--   **Pessimistic Locking:** Used `lockForUpdate()` on the Invoice row during payment. This is essential for health facilities where multiple cashiers might handle the same patient visit simultaneously.
--   **Atomic Webhook Processing:** By attempting to `create()` the WebhookEvent first and catching the `UniqueConstraintViolationException`, we ensure that two identical webhook requests cannot both trigger the payment logic.
--   **Facility-Specific Context:** Insurance options are fetched dynamically from the DB based on the facility context, preventing one facility's insurance contracts from leaking into another's UI.

@@ -2,12 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, Button } from '../../../components/ui-mock';
+import { Card, CardContent, Button } from '../../../components/ui';
 import { Loader2, CheckCircle2, UserCircle, CreditCard, Banknote } from 'lucide-react';
 
-const RadioGroup = ({ children, onValueChange }: any) => <div onChange={(e: any) => onValueChange(e.target.value)}>{children}</div>;
-const RadioGroupItem = ({ value, id, className }: any) => <input type="radio" value={value} id={id} name="insurance" className={className} />;
-const Label = ({ children, htmlFor, className }: any) => <label htmlFor={htmlFor} className={className}>{children}</label>;
+const RadioGroup = ({ children, onValueChange, className }: any) => (
+  <div className={className} onChange={(e: any) => onValueChange(e.target.value)}>
+    {children}
+  </div>
+);
+
+const RadioGroupItem = ({ value, id, className }: any) => (
+  <input type="radio" value={value} id={id} name="insurance" className={className} />
+);
+
+const Label = ({ children, htmlFor, className }: any) => (
+  <label htmlFor={htmlFor} className={className}>{children}</label>
+);
 
 interface InvoiceItem {
   id: string;
@@ -45,7 +55,6 @@ export default function BillingPage({ params }: { params: { visitId: string } })
     fetchInvoice();
   }, [params.visitId]);
 
-  // Polling logic for status updates (Real Integration)
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (invoice && (invoice.status === 'pending' || hasPendingMomo(invoice))) {
@@ -61,7 +70,7 @@ export default function BillingPage({ params }: { params: { visitId: string } })
       const data = await res.json();
       setInvoice(data);
     } catch (e) {
-      console.error("Connection failed.");
+      console.error("API Error: Failed to sync invoice status.");
     } finally {
       setLoading(false);
     }
@@ -84,14 +93,15 @@ export default function BillingPage({ params }: { params: { visitId: string } })
     if (!invoice) return;
     setProcessing(true);
     try {
-      await fetch(`/api/invoices/${invoice.id}/payments`, {
+      const res = await fetch(`/api/invoices/${invoice.id}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: calculateRemaining(), method })
       });
+      if (!res.ok) throw new Error("Payment failed");
       fetchInvoice();
     } catch (e) {
-      console.error("Payment initiation failed.");
+      console.error("Payment Error: Could not initiate transaction.");
     } finally {
       setProcessing(false);
     }

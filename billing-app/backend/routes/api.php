@@ -21,28 +21,3 @@ Route::post('/invoices/{invoiceId}/payments', [InvoiceController::class, 'proces
 // Webhooks
 Route::post('/webhooks/efichepay', [WebhookController::class, 'handleEfichePayWebhook']);
 
-// Auxiliary (for frontend polling)
-Route::get('/invoices/{invoiceId}', function ($invoiceId) {
-    return \App\Models\Invoice::with(['items', 'payments'])
-        ->findOrFail($invoiceId);
-});
-
-// Mock data route for frontend design consistency
-Route::get('/invoices/mock-data', function () {
-    return [
-        'id' => 'inv-123',
-        'patient_name' => 'Uwese Alise',
-        'visit_id' => 'VIS-001234',
-        'status' => 'pending',
-        'total_amount' => 16000,
-        'items' => [
-            ['id' => '1', 'description' => 'Malaria RDT', 'qty' => 1, 'price' => 5000, 'total' => 5000],
-            ['id' => '2', 'description' => 'Consultation', 'qty' => 1, 'price' => 10000, 'total' => 10000],
-            ['id' => '3', 'description' => 'Paracetamol', 'qty' => 2, 'price' => 500, 'total' => 1000],
-        ],
-        'payments' => [
-            // Simulating a pending payment if needed for the design check
-            // ['id' => 'p1', 'amount' => 16000, 'method' => 'mobile_money', 'status' => 'pending', 'transaction_id' => 'EFX-123-ABC']
-        ]
-    ];
-});
