@@ -60,7 +60,7 @@ The system includes an idempotent webhook handler to prevent duplicate payment p
 
 ---
 
-## 🏗 Key Engineering Decisions
+## Key Engineering Decisions
 
 ### 1. Pessimistic Locking
 In healthcare environments, multiple staff members often view or modify patient records simultaneously. We use `lockForUpdate()` during the payment window to prevent race conditions that could lead to double-payments or corrupted invoice states.
