@@ -18,7 +18,7 @@ Key focus areas: **High Availability**, **Data Consistency**, and **Offline-firs
 ##  Getting Started
 
 ### Option 1: Docker (Recommended)
-We use Laravel Sail for a pre-configured environment.
+I use Laravel Sail for a pre-configured environment.
 
 1.  **Start Services**:
     ```bash
@@ -63,11 +63,11 @@ The system includes an idempotent webhook handler to prevent duplicate payment p
 ## Key Engineering Decisions
 
 ### 1. Pessimistic Locking
-In healthcare environments, multiple staff members often view or modify patient records simultaneously. We use `lockForUpdate()` during the payment window to prevent race conditions that could lead to double-payments or corrupted invoice states.
+In healthcare environments, multiple staff members often view or modify patient records simultaneously. I use `lockForUpdate()` during the payment window to prevent race conditions that could lead to double-payments or corrupted invoice states.
 
 ### 2. Idempotent Hook Handling
 Mobile money providers often retry webhook notifications if the initial response is delayed. Our `WebhookController` uses a unique constraint enforcement on `eventId` at the database level to ensure that business logic (like updating payment status) is executed **exactly once**, regardless of how many times the provider hits the endpoint.
 
 ### 3. Graceful UI State Polling
-To handle "rural clinic" network constraints where WebSockets might be unstable, we implemented a robust 3-second polling mechanism with exponential backoff potential. This ensures the UI stays synced with the server-side payment confirmation without requiring a persistent socket connection.
+To handle "rural clinic" network constraints where WebSockets might be unstable, I implemented a robust 3-second polling mechanism with exponential backoff potential. This ensures the UI stays synced with the server-side payment confirmation without requiring a persistent socket connection.
 
