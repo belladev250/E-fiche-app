@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, Button } from '../components/ui-mock';
+import { Card, CardContent, Button } from '../components/ui';
 import { UserCircle, Search, ArrowRight, Activity } from 'lucide-react';
 
 interface Visit {

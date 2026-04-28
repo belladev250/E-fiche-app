@@ -3,12 +3,12 @@ billing-app/frontend/node_modules/
 billing-app/backend/vendor/
 
 # Environment files
-**/ .env
-**/ .env.local
+**/.env
+**/.env.local
 
 # Next.js build output
-**/ .next/
-**/ out/
+**/.next/
+**/out/
 
 # Laravel specific
 **/storage/*.key

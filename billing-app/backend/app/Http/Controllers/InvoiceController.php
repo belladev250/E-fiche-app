@@ -14,7 +14,9 @@ class InvoiceController extends Controller
 {
     public function createInvoice(Request $request, $visitId)
     {
-        $visit = Visit::findOrFail($visitId);
+        $visit = Visit::where('visit_id', $visitId)
+            ->orWhere('id', is_numeric($visitId) ? $visitId : null)
+            ->firstOrFail();
 
         return DB::transaction(function () use ($visit, $request) {
             $invoice = Invoice::create([
@@ -62,10 +64,10 @@ class InvoiceController extends Controller
 
             $payment = $invoice->payments()->create([
                 'amount'     => $request->amount,
-                'method'     => $request->method,
-                'status'     => $request->method === 'cash' ? 'confirmed' : 'pending',
-                'cashier_id' => $request->user()?->id ?? 1, // Fallback for prototype
-                'transaction_id' => $request->method === 'mobile_money' ? 'EFX-' . strtoupper(Str::random(6)) : null
+                'method'     => $request->input('method'),
+                'status'     => $request->input('method') === 'cash' ? 'confirmed' : 'pending',
+                'cashier_id' => 1, // Default for prototype phase
+                'transaction_id' => $request->input('method') === 'mobile_money' ? 'EFX-' . strtoupper(Str::random(6)) : null
             ]);
 
             if ($payment->status === 'confirmed' && ($totalPaid + $payment->amount) >= $invoice->total_amount) {
@@ -79,8 +81,8 @@ class InvoiceController extends Controller
     public function getActiveInvoice($visitId)
     {
         // Flexible lookup for prototype testing
-        $visit = Visit::where('id', $visitId)
-            ->orWhere('visit_id', $visitId)
+        $visit = Visit::where('visit_id', $visitId)
+            ->orWhere('id', is_numeric($visitId) ? $visitId : null)
             ->firstOrFail();
 
         $invoice = $visit->invoices()
